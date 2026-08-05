@@ -64,7 +64,9 @@ Types used: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`
 
 ## 💻 Running it locally
 
-[TODO: complete once the project is initialized]
+> **Not available yet.** Local setup will be possible once the project is initialized (see [Roadmap](#-roadmap)).
+
+Planned steps:
 
 ```bash
 git clone git@github.com:LuciaR22/Front_AI_Intership.git
