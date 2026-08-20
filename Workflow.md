@@ -11,18 +11,19 @@ explore-plan-code flow (Plan Mode in GitHub Copilot).
 
 ## Correctness
 
-Round 1 has **no tests at all** for the business logic (DAO, hooks,
-services) — it only generated tests for UI components (`Button.test.tsx`,
-`Input.test.tsx`, etc.), meaning the part that handles data and
-validation was never verified. Round 2 has 9 tests covering the full DAO
-(1 success case and 1 error case per CRUD operation, plus one extra
-failed-read case). Both rounds had bugs: Round 1 mixed
-interfaces/types inside logic files (e.g. `useNodes.ts` declaring types
-and functions together) and named the DAO generically (`nodeDAO.ts`)
-without indicating the storage type used. Round 2 had duplicated code
-(`.trim()` on tags repeated in `validateTags` and `create`, ignoring the
-already-normalized value the validation returned) and an initial
-configuration error (deprecated `moduleResolution`).
+Round 1 does have tests, but only for UI components (`Button.test.tsx`,
+`Input.test.tsx`, `NodeForm.test.tsx`, etc. — 7 files, all passing) —
+**none for the business logic** (DAO, hooks, services). Manual
+verification confirmed `npx tsc --noEmit` reports no type errors, `npm
+run dev` boots correctly, and the app works at a surface level. Still,
+the part that handles data and validation was never verified by tests,
+unlike Round 2. Round 2 has 9 tests covering the full DAO (1 success case
+and 1 error case per CRUD operation, plus one extra failed-read case).
+Round 1 also mixed interfaces/types inside logic files (e.g. `useNodes.ts`
+declaring types and functions together) and named the DAO generically
+(`nodeDAO.ts`) without indicating the storage type used. Round 2 had
+duplicated code (`.trim()` on tags repeated in `validateTags` and
+`create`, ignoring the already-normalized value the validation returned).
 
 ## Accessibility
 
@@ -51,13 +52,23 @@ Round 2, although slower to write the initial prompt, was faster to
 review because the process itself (explore-plan-code + tests) had already
 validated much of the behavior before manual review.
 
-## AI mistake caught
+## AI mistakes caught
 
-In Round 2, the `validateTags` function normalized and returned the
-cleaned tags (`.trim()`), but the DAO's `create` method ignored that
-result and re-applied `.trim()` on its own — duplicated code that a good
-prompt should have prevented from the start, but which was only caught
-during manual review of the generated code.
+1. **Duplicated normalization logic (Round 2):** the `validateTags`
+   function normalized and returned the cleaned tags (`.trim()`), but
+   the DAO's `create` method ignored that result and re-applied `.trim()`
+   on its own — duplicated code that a good prompt should have prevented
+   from the start, but which was only caught during manual review of the
+   generated code.
+
+2. **Deprecated TypeScript config (Round 2):** the generated
+   `tsconfig.json` used `"moduleResolution": "Node"`, a value deprecated
+   since TypeScript 5.0. Interestingly, Round 1's project scaffold (also
+   AI-generated, in a different tool/session) configured the environment
+   correctly without this issue — showing that even the same kind of
+   setup task can be handled inconsistently by AI across different
+   sessions/tools, which is exactly why a verification step matters
+   regardless of how "routine" a task seems.
 
 ## Conclusion
 
