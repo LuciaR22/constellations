@@ -8,14 +8,50 @@
 - **Testing:** Jest + React Testing Library
 - **Linting:** ESLint (integrated with Next.js)
 
+## Confirm scope before implementing
+
+If a request doesn't specify scope, the AI must ask before generating code — never assume by default. It must explicitly confirm:
+Does the project setup/environment need to be configured, or does it already exist?
+Is backend, frontend, or both required?
+If the answer is "everything," split the work into separate, deliverable steps: (1) setup/environment,(2) test-backend/logic, (3) backend/logic, (4) test-frontend/UI, (5) frontend/UI.
+
 ## Folder structure
 
 - `app/`: routes and pages (App Router). Each folder name defines a URL.
-- `app/[route]/_hooks/` and `app/[route]/_services/`: logic specific to that page (the underscore prevents Next.js from treating them as routes).
-- `components/`: UI components reusable across the app. Each component lives next to its test file (e.g. `Button.tsx` + `Button.test.tsx`).
-- `hooks/`: hooks shared across the whole app (e.g. `useAuth`, `useLocalStorage`).
-- `services/`: business logic / API calls shared across the whole app.
+- `app/[route]/_hooks/` and `app/[route]/_services/`: logic specific to
+  that page (the underscore prevents Next.js from treating them as
+  routes).
+- `components/`: UI components reusable across the app. Each component
+  lives next to its test file (e.g. `Button.tsx` + `Button.test.tsx`).
+- `hooks/`: hooks shared across the whole app (e.g. `useAuth`,
+  `useLocalStorage`).
+- `services/{feature}/`: domain/business logic grouped by feature, not
+  by technical type. Each feature folder contains its own types,
+  validation, DAO contract, and concrete implementation(s) together,
+  with tests living next to the file they test (e.g.
+  `services/nodes/node.ts`, `services/nodes/nodeValidation.ts`,
+  `services/nodes/nodeDAO.ts`, `services/nodes/nodeDAO.test.ts`,
+  `services/nodes/inMemoryNodeDAO.ts`).
 - `styles/`: global design configuration (color palette, typography).
+
+## File separation by responsibility
+
+Each file must have a single responsibility — the same Single
+Responsibility Principle applied at the file level, not just within
+functions. Never mix different responsibilities in the same file
+(e.g. type declarations, validation logic, a contract/interface, and
+a concrete implementation).
+
+Common examples in this project:
+
+- `{entity}.ts` -> data types and interfaces (e.g. `node.ts`)
+- `{entity}Validation.ts` -> validation functions (e.g. `nodeValidation.ts`)
+- `{entity}DAO.ts` -> DAO contract interface (e.g. `nodeDAO.ts`)
+- `{storageType}{Entity}DAO.ts` -> concrete implementation
+  (e.g. `inMemoryNodeDAO.ts`, `jsonFileNodeDAO.ts`)
+- A component and its logic: keep UI (`Component.tsx`) separate from
+  business logic (extracted into `hooks/` or `services/`, per the
+  "What NOT to do" section below).
 
 ## Code conventions
 
@@ -50,6 +86,22 @@
 - Every new component in `components/` must have a matching test in the same folder.
 - Use React Testing Library, prioritizing queries by role/visible text (not by implementation details).
 
+### One test, one responsibility
+
+Each it()/test() must verify a single behavior — just like functions and files, tests also have a single responsibility. Don't combine multiple operations or cases (e.g. create + update + delete, or a success case + an error case) in the same test.
+
+#### Structure:
+
+- Group tests with describe by method/operation.
+- Name each it in natural language, describing the expected behavior (e.g. "throws when title is empty"). If the name needs an "and" to be described, it's two tests, not one.
+- Follow the Arrange-Act-Assert pattern (set up data -> run the action -> verify the result) within each test.
+
+#### Minimum coverage:
+
+- If the feature is a CRUD: minimum 8 tests — one success case and one error case per operation (create, read, update, delete).
+- If it's not a CRUD: minimum 3 tests per feature — one success case and two error cases.
+- If more relevant success or error cases exist beyond the minimums, they must be added (the minimums are a floor, not a ceiling).
+
 ## Commits
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
@@ -58,7 +110,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 <type>(<scope>): <message in lowercase, imperative mood>
 ```
 
-Allowed types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`,  `style`
+Allowed types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`
 
 ## What NOT to do
 
